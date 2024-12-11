@@ -3,6 +3,7 @@ using UnityEngine.Networking;
 using TMPro;
 using System.Collections;
 using System.Text;
+using SimpleJSON; // Make sure to include SimpleJSON for flexible JSON parsing
 
 public class SpaceTradersAgentRegistration : MonoBehaviour
 {
@@ -82,17 +83,25 @@ public class SpaceTradersAgentRegistration : MonoBehaviour
 
     private string ExtractToken(string jsonResponse)
     {
-        // Example of extracting token from JSON response
-        // Assuming the response contains a "token" field. Modify if needed.
-        var response = JsonUtility.FromJson<AgentResponse>(jsonResponse);
-        if (response != null && !string.IsNullOrEmpty(response.token))
+        try
         {
-            Debug.Log("Token extracted successfully.");
-            return response.token;
+            // Attempt to parse JSON with SimpleJSON
+            var parsedJson = JSON.Parse(jsonResponse);
+            if (parsedJson != null && parsedJson["data"]["token"] != null)
+            {
+                string token = parsedJson["data"]["token"].Value;
+                Debug.Log("Token extracted successfully.");
+                return token;
+            }
+            else
+            {
+                Debug.LogError("Token field not found in the response.");
+                return null;
+            }
         }
-        else
+        catch (System.Exception ex)
         {
-            Debug.LogError("Failed to extract token from the response.");
+            Debug.LogError($"Failed to parse token from response. Exception: {ex.Message}");
             return null;
         }
     }
@@ -133,12 +142,5 @@ public class SpaceTradersAgentRegistration : MonoBehaviour
             this.symbol = symbol;
             this.faction = faction ?? ""; // Ensure that faction is never null
         }
-    }
-
-    // Response structure for token extraction
-    [System.Serializable]
-    private class AgentResponse
-    {
-        public string token;
     }
 }
